@@ -33,7 +33,6 @@ struct InfoView: View {
                         
                         // BIPTYA Text with clean white border (No glow)
                         ZStack {
-                            // The "Border" - 4 offsets for a flat, clean outline
                             Group {
                                 Text("BIPTYA")
                                     .offset(x:  1, y:  1)
@@ -46,12 +45,10 @@ struct InfoView: View {
                             }
                             .foregroundColor(.white)
                             
-                            // The Main Colored Text
                             Text("BIPTYA")
                                 .foregroundColor(biptyaColor)
                         }
                         .font(.custom("LostinSouth", size: 64))
-                        // Shadow removed to eliminate the glow effect
                     }
                 }
                 
@@ -84,12 +81,9 @@ struct InfoView: View {
                 .padding(.bottom, 50)
             }
         }
+        // NAVIGATION UPDATED HERE
         .navigationDestination(isPresented: $goToSceneOne) {
-            // SceneOneView will go here
-            Text("Scene 1 Loading...")
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black)
+            SceneOneView() // This now points to your new SceneOne file
         }
         .navigationBarBackButtonHidden(true)
     }

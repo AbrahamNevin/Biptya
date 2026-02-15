@@ -161,8 +161,9 @@ struct BridgeSceneView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        // Change this line:
         .navigationDestination(isPresented: $goToSceneTwo) {
-            SceneTwoView(didBuildCorridor: didChooseCorridor)
+            SceneTwoView(didChooseCorridor: didChooseCorridor) // Use didChooseCorridor here
         }
     }
     

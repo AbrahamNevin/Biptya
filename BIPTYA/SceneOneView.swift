@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct SceneOneView: View {
-    @State private var storyPhase = 0 // 0: Title, 1: Text, 2: Choices
+    @State private var storyPhase = 0
     @State private var lineVisible = [false, false, false, false]
     @State private var showContinueButton = false
-    @State private var goToBridgeScene = false
-    @State private var builtBridge = false // Tracks the player's decision
+    @State private var goToNextScene = false
+    @State private var builtBridge = false
     
     let biptyaColor = Color(red: 181/255, green: 103/255, blue: 13/255)
     
@@ -14,17 +14,14 @@ struct SceneOneView: View {
             ZStack {
                 Color.black.ignoresSafeArea()
                 
-                // --- BACKGROUND IMAGE ---
                 if storyPhase >= 1 {
                     Image("Scene1Base")
                         .resizable()
                         .scaledToFill()
                         .ignoresSafeArea()
                         .opacity(storyPhase == 1 ? 0.3 : 0.6)
-                        .transition(.opacity.animation(.easeInOut(duration: 2)))
                 }
                 
-                // --- PHASE 0: ACT 1 TITLE ---
                 if storyPhase == 0 {
                     Text("ACT 1: The Divided Path")
                         .font(.system(size: 48, weight: .bold))
@@ -36,7 +33,6 @@ struct SceneOneView: View {
                         }
                 }
                 
-                // --- PHASE 1: NARRATIVE TEXT ---
                 if storyPhase == 1 {
                     VStack(alignment: .leading, spacing: 25) {
                         ForEach(0..<4) { i in
@@ -64,31 +60,30 @@ struct SceneOneView: View {
                     .onAppear { revealLinesSequentially() }
                 }
                 
-                // --- PHASE 2: THE CHOICES ---
                 if storyPhase == 2 {
                     VStack {
                         Spacer()
                         HStack(spacing: 30) {
                             Button(action: {
                                 builtBridge = true
-                                goToBridgeScene = true
+                                goToNextScene = true
                             }) {
                                 choiceButton(text: "BUILD WILDLIFE CORRIDOR", color: .orange)
                             }
 
                             Button(action: {
                                 builtBridge = false
-                                goToBridgeScene = true
+                                goToNextScene = true
                             }) {
                                 choiceButton(text: "SPEED UP CONSTRUCTION", color: .orange)
                             }
                         }
                         .padding(.bottom, 80)
                     }
-                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                 }
             }
-            .navigationDestination(isPresented: $goToBridgeScene) {
+            .navigationDestination(isPresented: $goToNextScene) {
+                // Ensure this matches the parameter name in SceneTwoView
                 BridgeSceneView(didChooseCorridor: builtBridge)
             }
         }

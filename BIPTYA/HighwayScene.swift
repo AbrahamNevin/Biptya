@@ -3,6 +3,8 @@ import SpriteKit
 class HighwayScene: SKScene, SKPhysicsContactDelegate {
     var biptya: SKSpriteNode!
     
+    var didChooseCorridor: Bool = false
+    
     // Movement Constants
     let moveDistanceX: CGFloat = 300
     let moveDistanceY: CGFloat = 150
@@ -112,12 +114,13 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func goToInjuredScene() {
-        // Since both crossing AND getting hit lead to the injury, we use one scene
-        let nextScene = InjuredScene(size: self.size)
-        nextScene.scaleMode = .aspectFill
-        let transition = SKTransition.crossFade(withDuration: 0.6)
-        self.view?.presentScene(nextScene, transition: transition)
-    }
+            let nextScene = InjuredScene(size: self.size)
+            // PASS THE DATA: Move the choice to the next scene
+            nextScene.didChooseCorridor = self.didChooseCorridor
+            nextScene.scaleMode = .aspectFill
+            let transition = SKTransition.crossFade(withDuration: 0.6)
+            self.view?.presentScene(nextScene, transition: transition)
+        }
 
     // MARK: - UI BUTTONS
     func createButtons() {

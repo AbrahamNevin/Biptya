@@ -46,19 +46,30 @@ class InjuredScene: SKScene {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let touch = touches.first {
-            let tapped = nodes(at: touch.location(in: self))
-            if tapped.contains(where: { $0.name == "restart" }) {
-                let scene = HighwayScene(size: self.size)
-                scene.didChooseCorridor = self.didChooseCorridor
-                self.view?.presentScene(scene, transition: .crossFade(withDuration: 1))
-            } else if tapped.contains(where: { $0.name == "buildFence" }) {
-                if didChooseCorridor { print("Go to Fence Build Scene") }
-                else {
-                    let s = SKAction.repeat(SKAction.sequence([SKAction.moveBy(x: 10, y: 0, duration: 0.05), SKAction.moveBy(x: -10, y: 0, duration: 0.05)]), count: 3)
-                    childNode(withName: "buildFence")?.run(s)
-                }
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let tappedNodes = nodes(at: location)
+        
+        // Check for Restart Button
+        if tappedNodes.contains(where: { $0.name == "restart" }) {
+            let scene = HighwayScene(size: self.size)
+            scene.didChooseCorridor = self.didChooseCorridor
+            self.view?.presentScene(scene, transition: .crossFade(withDuration: 1))
+        }
+        // Check for Build Fence Button (Now correctly outside the restart block)
+        else if tappedNodes.contains(where: { $0.name == "buildFence" }) {
+            if didChooseCorridor {
+                // Post notification to trigger SwiftUI navigation
+                NotificationCenter.default.post(name: NSNotification.Name("GoToFenceBuild"), object: nil)
+            } else {
+                // Shake effect if locked
+                let s = SKAction.repeat(SKAction.sequence([
+                    SKAction.moveBy(x: 10, y: 0, duration: 0.05),
+                    SKAction.moveBy(x: -10, y: 0, duration: 0.05)
+                ]), count: 3)
+                childNode(withName: "buildFence")?.run(s)
             }
         }
     }
+    
 }

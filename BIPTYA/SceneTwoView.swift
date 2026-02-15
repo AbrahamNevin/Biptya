@@ -8,11 +8,14 @@ struct SceneTwoView: View {
     @State private var goToOutcome = false
     @State private var choseSafeCrossing = false
     
+    // NEW: State to trigger navigation to the Fence Placement screen
+    @State private var goToFenceBuild = false
+    
     var highwayGame: SKScene {
-        // 1. Get the actual screen size if possible, or use a flexible approach
+        // Updated to use full screen bounds and resizeFill to prevent zooming
         let scene = HighwayScene(size: UIScreen.main.bounds.size)
         scene.didChooseCorridor = self.didChooseCorridor
-        scene.scaleMode = .resizeFill // 2. Change this to resizeFill
+        scene.scaleMode = .resizeFill
         return scene
     }
     
@@ -65,6 +68,10 @@ struct SceneTwoView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        // Listener for the Fence Placement screen
+        .navigationDestination(isPresented: $goToFenceBuild) {
+            FencePlacementView()
+        }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation { showChoices = true }
@@ -72,12 +79,17 @@ struct SceneTwoView: View {
         }
         .navigationDestination(isPresented: $goToOutcome) {
             if choseSafeCrossing {
-                // REPLACE the Text placeholder with your actual View
                 CorridorCrossingView()
             } else {
+                // The SpriteKit view wrapper
                 SpriteView(scene: highwayGame)
                     .ignoresSafeArea()
                     .navigationBarBackButtonHidden(true)
+                    // KEY: This listens for the message from InjuredScene
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToFenceBuild"))) { _ in
+                        print("SwiftUI: Transitioning to Fence Scene")
+                        self.goToFenceBuild = true
+                    }
             }
         }
     }

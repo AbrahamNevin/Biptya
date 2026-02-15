@@ -5,7 +5,15 @@
 //  Created by Nevin Abraham on 14/02/26.
 //
 
+//
+//  SceneTwoView.swift
+//  BIPTYA
+//
+//  Created by Nevin Abraham on 14/02/26.
+//
+
 import SwiftUI
+import SpriteKit
 
 struct SceneTwoView: View {
     
@@ -15,6 +23,14 @@ struct SceneTwoView: View {
     @State private var showChoices = false
     @State private var goToOutcome = false
     @State private var choseSafeCrossing = false
+    
+    // Create the SpriteKit scene for the Highway Mini-game
+    var highwayGame: SKScene {
+        let scene = HighwayScene()
+        scene.size = CGSize(width: 400, height: 800)
+        scene.scaleMode = .resizeFill
+        return scene
+    }
     
     var body: some View {
         ZStack {
@@ -47,7 +63,6 @@ struct SceneTwoView: View {
                             .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
-                            .foregroundColor(.white)
                         
                         HStack(spacing: 20) {
                             
@@ -94,6 +109,7 @@ struct SceneTwoView: View {
                 }
             }
         }
+        .navigationBarBackButtonHidden(true)
         
         // MARK: - Delayed cinematic reveal
         .onAppear {
@@ -106,19 +122,21 @@ struct SceneTwoView: View {
         
         // MARK: - Navigation to Outcome
         .navigationDestination(isPresented: $goToOutcome) {
-//            SceneTwoOutcomeView(
-//                didChooseSafePath: choseSafeCrossing,
-//                corridorExists: didBuildCorridor
-//            )
+            if choseSafeCrossing {
+                CorridorCrossingView()
+            } else {
+                // MARK: - SpriteKit Action Scene
+                // This displays the high-performance car-dodging game
+                SpriteView(scene: highwayGame)
+                    .ignoresSafeArea()
+                    .navigationBarBackButtonHidden(true)
+            }
         }
     }
 }
 
-
 // MARK: - Reusable Cinematic Button Style
-
 extension SceneTwoView {
-    
     func choiceButton(text: String, color: Color) -> some View {
         Text(text)
             .font(.system(size: 20, weight: .bold))

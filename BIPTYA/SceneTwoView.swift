@@ -9,7 +9,10 @@ struct SceneTwoView: View {
     @State private var choseSafeCrossing = false
     @State private var goToFenceBuild = false
     
-    // NEW: State for the Act Title Card
+    // NEW: State for Escalation Ending Navigation
+    @State private var goToEscalation = false
+    
+    // State for the Act Title Card
     @State private var showTitleCard = true
     
     var highwayGame: SKScene {
@@ -69,33 +72,41 @@ struct SceneTwoView: View {
                     }
                 }
             }
-            .opacity(showTitleCard ? 0 : 1) // Hide content while title is showing
+            .opacity(showTitleCard ? 0 : 1)
             
-            // 2. NEW: The Intro Title Card Overlay
+            // 2. The Intro Title Card Overlay
             if showTitleCard {
                 ZStack {
                     Color.black.ignoresSafeArea()
                     
                     Text("ACT 2: The Crossing")
                         .font(.system(size: 35, weight: .black, design: .serif))
-                        .tracking(4) // Space out letters for cinematic look
+                        .tracking(4)
                         .foregroundColor(.white)
                 }
-                .transition(.opacity) // Smooth fade out
+                .transition(.opacity)
             }
         }
         .navigationBarBackButtonHidden(true)
+        
+        // --- Navigation Destinations ---
+        
         .navigationDestination(isPresented: $goToFenceBuild) {
             FencePlacementView()
         }
+        
+        // NEW: Destination for Escalation Ending
+        .navigationDestination(isPresented: $goToEscalation) {
+            EscalationEndingView()
+        }
+        
         .onAppear {
-            // Step 1: Show the title card for 2.5 seconds, then fade it out
+            // Act Title Sequence
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 withAnimation(.easeInOut(duration: 1.5)) {
                     showTitleCard = false
                 }
                 
-                // Step 2: Once title is gone, wait a bit then show choice buttons
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation {
                         showChoices = true
@@ -107,11 +118,20 @@ struct SceneTwoView: View {
             if choseSafeCrossing {
                 CorridorCrossingView()
             } else {
+                // The SpriteKit Game View
                 SpriteView(scene: highwayGame)
                     .ignoresSafeArea()
                     .navigationBarBackButtonHidden(true)
+                    
+                    // Listener for Building Fences (Success Path)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToFenceBuild"))) { _ in
                         self.goToFenceBuild = true
+                    }
+                    
+                    // NEW: Listener for Escalation (Failure/Ignore Path)
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToEscalationEnding"))) { _ in
+                        print("SwiftUI Received: Transition to Escalation Ending")
+                        self.goToEscalation = true
                     }
             }
         }

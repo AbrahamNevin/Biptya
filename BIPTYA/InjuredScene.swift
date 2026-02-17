@@ -16,13 +16,12 @@ class InjuredScene: SKScene {
         label.position = CGPoint(x: frame.midX, y: frame.midY); label.zPosition = 2; label.alpha = 0
         addChild(label)
 
-        // TWO OPTIONS
         let fenceBtn = spawnButton(name: "buildFence",
                                    text: didChooseCorridor ? "BUILD FENCE" : "FENCE LOCKED",
                                    pos: CGPoint(x: frame.midX, y: frame.midY - 120),
                                    color: didChooseCorridor ? .systemGreen : .darkGray)
         
-        let restartBtn = spawnButton(name: "restart",
+        let escalateBtn = spawnButton(name: "escalate",
                                      text: "CONTINUE AS IT IS",
                                      pos: CGPoint(x: frame.midX, y: frame.midY - 220),
                                      color: .white)
@@ -34,7 +33,7 @@ class InjuredScene: SKScene {
         label.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.fadeIn(withDuration: 2.0)]))
         
         let btnFade = SKAction.sequence([SKAction.wait(forDuration: 4.0), SKAction.fadeIn(withDuration: 1.0)])
-        [fenceBtn, restartBtn].forEach { $0.alpha = 0; addChild($0); $0.run(btnFade) }
+        [fenceBtn, escalateBtn].forEach { $0.alpha = 0; addChild($0); $0.run(btnFade) }
     }
 
     func spawnButton(name: String, text: String, pos: CGPoint, color: UIColor) -> SKSpriteNode {
@@ -50,19 +49,14 @@ class InjuredScene: SKScene {
         let location = touch.location(in: self)
         let tappedNodes = nodes(at: location)
         
-        // Check for Restart Button
-        if tappedNodes.contains(where: { $0.name == "restart" }) {
-            let scene = HighwayScene(size: self.size)
-            scene.didChooseCorridor = self.didChooseCorridor
-            self.view?.presentScene(scene, transition: .crossFade(withDuration: 1))
+        if tappedNodes.contains(where: { $0.name == "escalate" }) {
+            // TRIGGER ESCALATION ENDING
+            NotificationCenter.default.post(name: NSNotification.Name("GoToEscalationEnding"), object: nil)
         }
-        // Check for Build Fence Button (Now correctly outside the restart block)
         else if tappedNodes.contains(where: { $0.name == "buildFence" }) {
             if didChooseCorridor {
-                // Post notification to trigger SwiftUI navigation
                 NotificationCenter.default.post(name: NSNotification.Name("GoToFenceBuild"), object: nil)
             } else {
-                // Shake effect if locked
                 let s = SKAction.repeat(SKAction.sequence([
                     SKAction.moveBy(x: 10, y: 0, duration: 0.05),
                     SKAction.moveBy(x: -10, y: 0, duration: 0.05)
@@ -71,5 +65,4 @@ class InjuredScene: SKScene {
             }
         }
     }
-    
 }

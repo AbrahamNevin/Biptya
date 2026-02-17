@@ -6,14 +6,15 @@ struct CorridorCrossingView: View {
     @State private var hasFinishedCrossing = false
     @State private var isPulsing = false
     
-    // NEW: Manual control over the rotation for the auto-animation phase
+    // NEW: State to trigger the final ending screen
+    @State private var goToEnding = false
+    
     @State private var autoRotation: Double = 0.0
     
     let bridgeEntrance = CGSize(width: -510, height: -100)
     let snapTolerance: CGFloat = 80.0
     let biptyaColor = Color(red: 181/255, green: 103/255, blue: 13/255)
     
-    // Updated Logic: Use calculated tilt during drag, but use autoRotation during the auto-walk.
     private var currentTilt: Double {
         if isCrossing {
             return autoRotation
@@ -38,7 +39,10 @@ struct CorridorCrossingView: View {
                         .stroke(Color.green, lineWidth: 3)
                         .frame(width: 120, height: 120)
                         .background(Circle().fill(Color.green.opacity(0.2)))
-                    Text("PLACE\nHERE").font(.system(size: 12, weight: .black)).foregroundColor(.green).multilineTextAlignment(.center)
+                    Text("PLACE\nHERE")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundColor(.green)
+                        .multilineTextAlignment(.center)
                 }
                 .offset(bridgeEntrance)
                 .scaleEffect(isPulsing ? 1.1 : 0.9)
@@ -50,11 +54,25 @@ struct CorridorCrossingView: View {
             // HUD
             VStack {
                 Text(hasFinishedCrossing ? "SAFE PASSAGE" : "GUIDE BIPTYA ACROSS THE BRIDGE")
-                    .font(.system(size: 16, weight: .black)).tracking(2).foregroundColor(.white).padding().background(Color.black.opacity(0.6)).cornerRadius(8).padding(.top, 60)
+                    .font(.system(size: 16, weight: .black))
+                    .tracking(2)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(8)
+                    .padding(.top, 60)
+                
                 Spacer()
+                
                 if hasFinishedCrossing {
-                    Button(action: { /* Next Scene */ }) {
-                        Text("CONTINUE STORY").font(.system(size: 18, weight: .bold)).foregroundColor(.black).padding().background(biptyaColor).cornerRadius(10)
+                    // UPDATED: Button now triggers navigation
+                    Button(action: { goToEnding = true }) {
+                        Text("CONTINUE STORY")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding()
+                            .background(biptyaColor)
+                            .cornerRadius(10)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 50)
@@ -66,7 +84,7 @@ struct CorridorCrossingView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 160)
-                .rotationEffect(.degrees(currentTilt)) // Now uses the combined logic
+                .rotationEffect(.degrees(currentTilt))
                 .offset(biptyaOffset)
                 .gesture(
                     DragGesture()
@@ -82,6 +100,10 @@ struct CorridorCrossingView: View {
                 )
         }
         .navigationBarBackButtonHidden(true)
+        // NEW: Navigation Destination to the Ending Screen
+        .navigationDestination(isPresented: $goToEnding) {
+            CoexistenceEndingView()
+        }
     }
     
     private func checkBridgeEntrance() {
@@ -98,15 +120,12 @@ struct CorridorCrossingView: View {
     private func startCrossingAnimation() {
         isCrossing = true
         
-        // 1. Start the "Waddle" rotation loop independently
         withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
-            autoRotation = 10.0 // Tilts to 10 degrees and back forever
+            autoRotation = 10.0
         }
         
-        // 2. Snap to entrance
         withAnimation(.easeOut(duration: 0.4)) { biptyaOffset = bridgeEntrance }
         
-        // 3. Auto-walk across screen
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             withAnimation(.linear(duration: 10.0)) {
                 biptyaOffset = CGSize(width: 850, height: -80)
@@ -116,7 +135,7 @@ struct CorridorCrossingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
             withAnimation {
                 hasFinishedCrossing = true
-                autoRotation = 0 // Stop tilting when finished
+                autoRotation = 0
             }
         }
     }

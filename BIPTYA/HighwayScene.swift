@@ -8,7 +8,7 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
     // Movement Constants
     let moveDistanceX: CGFloat = 300
     let moveDistanceY: CGFloat = 150
-    var isMoving = false // For difficulty: prevents spamming jumps
+    var isMoving = false
     
     override func didMove(to view: SKView) {
         physicsWorld.contactDelegate = self
@@ -23,8 +23,7 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         
         // 2. Setup Biptya
         biptya = SKSpriteNode(imageNamed: "biptya_walk")
-        biptya.size = CGSize(width: 150, height: 75)
-        // Start lower to increase travel time
+        biptya.size = CGSize(width: 400, height: 200)
         biptya.position = CGPoint(x: frame.midX, y: frame.minY + 60)
         
         biptya.physicsBody = SKPhysicsBody(rectangleOf: biptya.size)
@@ -37,48 +36,102 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         createButtons()
     }
     
-    // MARK: - TRAFFIC (Increased Difficulty)
-    func setupTraffic() {
-        // Lanes are spread out more to cover more of the screen
-        let lanes = [
-            frame.midY + 200,
-            frame.midY + 70,
-            frame.midY - 70,
-            frame.midY - 200
-        ]
-        
-        for i in 0..<4 {
-            let car = SKSpriteNode(imageNamed: "car_topview_\(i+1)")
-            car.size = CGSize(width: 160, height: 80)
+    // MARK: - TRAFFIC (Reduced to 2 Cars)
+//    func setupTraffic() {
+//        // Defined only 2 lanes now
+//        let lanes = [
+//            frame.midY + 170, // Upper lane
+//            frame.midY - 70  // Lower lane
+//        ]
+//        
+//        // Loop runs exactly 2 times
+//        for i in 0..<2 {
+//            // Using i+1 for image names (assumes car_topview_1 and car_topview_2 exist)
+//            let car = SKSpriteNode(imageNamed: "car_topview\(i+1)")
+//            car.size = CGSize(width: 600, height: 300)
+//            
+//            // Car 0 moves Right, Car 1 moves Left
+//            let movingRight = (i == 0)
+//            let startX = movingRight ? frame.minX - 150 : frame.maxX + 150
+//            let endX = movingRight ? frame.maxX + 150 : frame.minX - 150
+//            
+//            car.position = CGPoint(x: startX, y: lanes[i])
+//            
+//            if !movingRight {
+//                // Points the car left (180 degrees) without mirroring the image details
+//                car.zRotation = .pi * 2
+//                // Ensure xScale is reset to 1 in case of recycling
+//                car.xScale = 1
+//            }
+//            
+//            car.physicsBody = SKPhysicsBody(rectangleOf: car.size)
+//            car.physicsBody?.isDynamic = false
+//            car.physicsBody?.categoryBitMask = 2
+//            addChild(car)
+//            
+//            // Random speed for variety
+//            let duration = Double.random(in: 1.8...2.8)
+//            
+//            let move = SKAction.moveTo(x: endX, duration: duration)
+//            let reset = SKAction.run { car.position.x = startX }
+//            let sequence = SKAction.sequence([move, reset])
+//            car.run(SKAction.repeatForever(sequence))
+//        }
+//    }
+    // MARK: - TRAFFIC (Larger, Faster, Full Screen Clearance)
+        func setupTraffic() {
+            let lanes = [
+                frame.midY + 170, // Upper lane
+                frame.midY - 70   // Lower lane
+            ]
             
-            let movingRight = i < 2
-            let startX = movingRight ? frame.minX - 150 : frame.maxX + 150
-            let endX = movingRight ? frame.maxX + 150 : frame.minX - 150
+            let carWidth: CGFloat = 600
+            let carHeight: CGFloat = 300
             
-            car.position = CGPoint(x: startX, y: lanes[i])
+            // Offset ensures the car is fully hidden before resetting
+            // We use carWidth (600) + a little extra padding
+            let offScreenOffset: CGFloat = carWidth / 2 + 100
             
-            if !movingRight {
-                car.zRotation = .pi
+            for i in 0..<2 {
+                let car = SKSpriteNode(imageNamed: "car_topview\(i+1)")
+                car.size = CGSize(width: carWidth, height: carHeight)
+                
+                let movingRight = (i == 0)
+                
+                // Calculate positions based on the screen edges + the car's width
+                let startX = movingRight ? frame.minX - offScreenOffset : frame.maxX + offScreenOffset
+                let endX = movingRight ? frame.maxX + offScreenOffset : frame.minX - offScreenOffset
+                
+                car.position = CGPoint(x: startX, y: lanes[i])
+                
+                if !movingRight {
+                    // .pi is 180 degrees (Facing Left)
+                    car.zRotation = .pi * 2
+                    car.xScale = 1
+                } else {
+                    car.zRotation = 0
+                    car.xScale = 1
+                }
+                
+                // Re-calculating physics to match the large 600x300 size
+                car.physicsBody = SKPhysicsBody(rectangleOf: car.size)
+                car.physicsBody?.isDynamic = false
+                car.physicsBody?.categoryBitMask = 2
+                addChild(car)
+                
+                // INCREASED SPEED: Lower duration = Faster car
+                // Previous was 1.8...2.8. Now it's much faster.
+                let duration = Double.random(in: 1.0...1.5)
+                
+                let move = SKAction.moveTo(x: endX, duration: duration)
+                let reset = SKAction.run { car.position.x = startX }
+                let sequence = SKAction.sequence([move, reset])
+                car.run(SKAction.repeatForever(sequence))
             }
-            
-            car.physicsBody = SKPhysicsBody(rectangleOf: car.size)
-            car.physicsBody?.isDynamic = false
-            car.physicsBody?.categoryBitMask = 2
-            addChild(car)
-            
-            // DIFFICULTY TWEAK: Faster speeds (1.5 to 2.5 seconds instead of 4.0)
-            let duration = Double.random(in: 1.5...2.5)
-            
-            let move = SKAction.moveTo(x: endX, duration: duration)
-            let reset = SKAction.run { car.position.x = startX }
-            let sequence = SKAction.sequence([move, reset])
-            car.run(SKAction.repeatForever(sequence))
         }
-    }
-    
     // MARK: - MOVEMENT & WIN LOGIC
     func moveBiptya(direction: String) {
-        if isMoving { return } // Prevent jumping until current jump finishes
+        if isMoving { return }
         
         var newPosition = biptya.position
         switch direction {
@@ -97,7 +150,6 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
             let moveAction = SKAction.move(to: newPosition, duration: 0.12)
             biptya.run(moveAction) {
                 self.isMoving = false
-                // If he crosses the road
                 if self.biptya.position.y > self.frame.maxY - 100 {
                     self.goToInjuredScene()
                 }
@@ -107,20 +159,18 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
     
     // MARK: - COLLISION
     func didBegin(_ contact: SKPhysicsContact) {
-        // If a car touches Biptya
         if contact.bodyA.categoryBitMask == 1 || contact.bodyB.categoryBitMask == 1 {
             goToInjuredScene()
         }
     }
     
     func goToInjuredScene() {
-            let nextScene = InjuredScene(size: self.size)
-            // PASS THE DATA: Move the choice to the next scene
-            nextScene.didChooseCorridor = self.didChooseCorridor
-            nextScene.scaleMode = .aspectFill
-            let transition = SKTransition.crossFade(withDuration: 0.6)
-            self.view?.presentScene(nextScene, transition: transition)
-        }
+        let nextScene = InjuredScene(size: self.size)
+        nextScene.didChooseCorridor = self.didChooseCorridor
+        nextScene.scaleMode = .aspectFill
+        let transition = SKTransition.crossFade(withDuration: 0.6)
+        self.view?.presentScene(nextScene, transition: transition)
+    }
 
     // MARK: - UI BUTTONS
     func createButtons() {

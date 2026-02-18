@@ -3,29 +3,42 @@ import SwiftUI
 struct FencePlacementView: View {
     @State private var goToNextScene = false
     
+    // --- DOCK POSITIONS (Centered at 440) ---
+    let dock1X: CGFloat = 440
+    let dock1Y: CGFloat = 260
+    
+    let dock2X: CGFloat = 440
+    let dock2Y: CGFloat = 420
+    
     // State for Fence 1 (Left)
-    @State private var dragOffset1: CGSize = CGSize(width: -100, height: -300)
+    @State private var dragOffset1: CGSize = .zero
     @State private var isPlaced1 = false
+    @State private var isDragging1 = false
     
     // State for Fence 2 (Right)
-    @State private var dragOffset2: CGSize = CGSize(width: 100, height: -300)
+    @State private var dragOffset2: CGSize = .zero
     @State private var isPlaced2 = false
+    @State private var isDragging2 = false
     
     @State private var showNextButton = false
     
-    // --- SETTINGS ---
-    // Left Fence
+    // --- PLACEMENT TARGETS ---
     let target1 = CGSize(width: -350, height: 250)
     let degrees1: Double = -10.0
-    let width1: CGFloat = 800.0  // Keep the left one large
+    let width1: CGFloat = 800.0
     
-    // Right Fence
-    let target2 = CGSize(width: 350, height: 120)
+    let target2 = CGSize(width: 400, height: 120)
     let degrees2: Double = 0.0
-    let width2: CGFloat = 600.0  // DECREASED size for the right one
+    let width2: CGFloat = 600.0
     
     let snapTolerance: CGFloat = 60.0
     let biptyaColor = Color(red: 181/255, green: 103/255, blue: 13/255)
+
+    init() {
+        // Initialize offsets to start exactly in their respective boxes
+        _dragOffset1 = State(initialValue: CGSize(width: 440, height: 260))
+        _dragOffset2 = State(initialValue: CGSize(width: 440, height: 420))
+    }
 
     var body: some View {
         ZStack {
@@ -34,7 +47,17 @@ struct FencePlacementView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
             
-            // 2. Target Outlines
+            // --- 1. DOCK BOXES ---
+            Group {
+                if !isPlaced1 {
+                    dockBox(label: "Fence Left", x: dock1X, y: dock1Y)
+                }
+                if !isPlaced2 {
+                    dockBox(label: "Fence Right", x: dock2X, y: dock2Y)
+                }
+            }
+
+            // 2. Target Outlines (Shadows)
             Group {
                 if !isPlaced1 {
                     targetShadow(imageName: "fence_left", at: target1, degrees: degrees1, width: width1)
@@ -45,17 +68,33 @@ struct FencePlacementView: View {
             }
 
             // 3. Draggable Fences
-            fenceItem(imageName: "fence_left", offset: $dragOffset1, isPlaced: isPlaced1, target: target1, degrees: degrees1, width: width1) {
+            fenceItem(imageName: "fence_left",
+                      offset: $dragOffset1,
+                      isPlaced: isPlaced1,
+                      isDragging: $isDragging1,
+                      target: target1,
+                      degrees: degrees1,
+                      fullWidth: width1,
+                      dockX: dock1X,
+                      dockY: dock1Y) {
                 checkPlacement(for: 1)
             }
             
-            fenceItem(imageName: "fence_right", offset: $dragOffset2, isPlaced: isPlaced2, target: target2, degrees: degrees2, width: width2) {
+            fenceItem(imageName: "fence_right",
+                      offset: $dragOffset2,
+                      isPlaced: isPlaced2,
+                      isDragging: $isDragging2,
+                      target: target2,
+                      degrees: degrees2,
+                      fullWidth: width2,
+                      dockX: dock2X,
+                      dockY: dock2Y) {
                 checkPlacement(for: 2)
             }
 
             // UI Overlay
             VStack {
-                Text(isPlaced1 && isPlaced2 ? "PERIMETER SECURED" : "DRAG THE FENCES TO PROTECT THE VILLAGE")
+                Text(isPlaced1 && isPlaced2 ? "PERIMETER SECURED" : "DRAG FENCES FROM STORAGE TO THE TARGETS")
                     .font(.system(size: 16, weight: .black))
                     .tracking(2)
                     .foregroundColor(.white)
@@ -82,27 +121,44 @@ struct FencePlacementView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        // --- THIS PART HANDLES THE NAVIGATION ---
+        .navigationDestination(isPresented: $goToNextScene) {
+            CoexistenceEndingView()
+        }
     }
 
     // MARK: - Helper Views
     
-    // Added 'width' parameter
+    func dockBox(label: String, x: CGFloat, y: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.orange, lineWidth: 3)
+                .background(RoundedRectangle(cornerRadius: 15).fill(Color.black.opacity(0.4)))
+                .frame(width: 160, height: 110)
+            
+            Text(label)
+                .font(.caption.bold())
+                .foregroundColor(.orange)
+                .offset(y: -70)
+        }
+        .offset(x: x, y: y)
+    }
+    
     func targetShadow(imageName: String, at pos: CGSize, degrees: Double, width: CGFloat) -> some View {
         Image(imageName)
             .resizable()
             .scaledToFit()
-            .frame(width: width) // Use the individual width
+            .frame(width: width)
             .rotationEffect(.degrees(degrees))
             .opacity(0.2)
             .offset(pos)
     }
 
-    // Added 'width' parameter
-    func fenceItem(imageName: String, offset: Binding<CGSize>, isPlaced: Bool, target: CGSize, degrees: Double, width: CGFloat, onEnd: @escaping () -> Void) -> some View {
+    func fenceItem(imageName: String, offset: Binding<CGSize>, isPlaced: Bool, isDragging: Binding<Bool>, target: CGSize, degrees: Double, fullWidth: CGFloat, dockX: CGFloat, dockY: CGFloat, onEnd: @escaping () -> Void) -> some View {
         Image(imageName)
             .resizable()
             .scaledToFit()
-            .frame(width: width) // Use the individual width
+            .frame(width: (isDragging.wrappedValue || isPlaced) ? fullWidth : 100)
             .rotationEffect(.degrees(degrees))
             .shadow(color: .black.opacity(isPlaced ? 0 : 0.4), radius: 10)
             .offset(offset.wrappedValue)
@@ -110,19 +166,20 @@ struct FencePlacementView: View {
                 DragGesture()
                     .onChanged { value in
                         if !isPlaced {
+                            isDragging.wrappedValue = true
                             offset.wrappedValue = CGSize(
-                                width: value.translation.width + (pieceInitialWidth(for: imageName)),
-                                height: value.translation.height + (-300)
+                                width: dockX + value.translation.width,
+                                height: dockY + value.translation.height
                             )
                         }
                     }
-                    .onEnded { _ in onEnd() }
+                    .onEnded { _ in
+                        isDragging.wrappedValue = false
+                        onEnd()
+                    }
             )
-            .animation(.spring(), value: offset.wrappedValue)
-    }
-    
-    func pieceInitialWidth(for name: String) -> CGFloat {
-        return name == "fence_left" ? -100 : 100
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: offset.wrappedValue)
+            .animation(.spring(), value: isDragging.wrappedValue)
     }
 
     // MARK: - Logic
@@ -135,7 +192,7 @@ struct FencePlacementView: View {
                     isPlaced1 = true
                 }
             } else {
-                withAnimation(.spring()) { dragOffset1 = CGSize(width: -100, height: -300) }
+                withAnimation(.spring()) { dragOffset1 = CGSize(width: dock1X, height: dock1Y) }
             }
         } else {
             if isNear(dragOffset2, target2) {
@@ -144,7 +201,7 @@ struct FencePlacementView: View {
                     isPlaced2 = true
                 }
             } else {
-                withAnimation(.spring()) { dragOffset2 = CGSize(width: 100, height: -300) }
+                withAnimation(.spring()) { dragOffset2 = CGSize(width: dock2X, height: dock2Y) }
             }
         }
         

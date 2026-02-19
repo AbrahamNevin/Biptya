@@ -22,8 +22,8 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         addChild(background)
         
         // 2. Setup Biptya
-        biptya = SKSpriteNode(imageNamed: "biptya_walk")
-        biptya.size = CGSize(width: 400, height: 200)
+        biptya = SKSpriteNode(imageNamed: "biptya_walk_away")
+        biptya.size = CGSize(width: 150, height: 350)
         biptya.position = CGPoint(x: frame.midX, y: frame.minY + 60)
         
         biptya.physicsBody = SKPhysicsBody(rectangleOf: biptya.size)
@@ -79,49 +79,94 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
 //        }
 //    }
     // MARK: - TRAFFIC (Larger, Faster, Full Screen Clearance)
+//        func setupTraffic() {
+//            let lanes = [
+//                frame.midY + 170, // Upper lane
+//                frame.midY - 70   // Lower lane
+//            ]
+//            
+//            let carWidth: CGFloat = 600
+//            let carHeight: CGFloat = 300
+//            
+//            // Offset ensures the car is fully hidden before resetting
+//            // We use carWidth (600) + a little extra padding
+//            let offScreenOffset: CGFloat = carWidth / 2 + 100
+//            
+//            for i in 0..<2 {
+//                let car = SKSpriteNode(imageNamed: "car_topview\(i+1)")
+//                car.size = CGSize(width: carWidth, height: carHeight)
+//                
+//                let movingRight = (i == 0)
+//                
+//                // Calculate positions based on the screen edges + the car's width
+//                let startX = movingRight ? frame.minX - offScreenOffset : frame.maxX + offScreenOffset
+//                let endX = movingRight ? frame.maxX + offScreenOffset : frame.minX - offScreenOffset
+//                
+//                car.position = CGPoint(x: startX, y: lanes[i])
+//                
+//                if !movingRight {
+//                    // .pi is 180 degrees (Facing Left)
+//                    car.zRotation = .pi * 2
+//                    car.xScale = 1
+//                } else {
+//                    car.zRotation = 0
+//                    car.xScale = 1
+//                }
+//                
+//                // Re-calculating physics to match the large 600x300 size
+//                car.physicsBody = SKPhysicsBody(rectangleOf: car.size)
+//                car.physicsBody?.isDynamic = false
+//                car.physicsBody?.categoryBitMask = 2
+//                addChild(car)
+//                
+//                // INCREASED SPEED: Lower duration = Faster car
+//                // Previous was 1.8...2.8. Now it's much faster.
+//                let duration = Double.random(in: 1.0...1.5)
+//                
+//                let move = SKAction.moveTo(x: endX, duration: duration)
+//                let reset = SKAction.run { car.position.x = startX }
+//                let sequence = SKAction.sequence([move, reset])
+//                car.run(SKAction.repeatForever(sequence))
+//            }
+//        }
+    // MARK: - IMPOSSIBLE TRAFFIC
         func setupTraffic() {
+            // We pack the lanes closer so there is zero "safe zone" in the middle
             let lanes = [
                 frame.midY + 170, // Upper lane
-                frame.midY - 70   // Lower lane
+                frame.midY - 10   // Lower lane (moved up to overlap the gap)
             ]
             
-            let carWidth: CGFloat = 600
-            let carHeight: CGFloat = 300
-            
-            // Offset ensures the car is fully hidden before resetting
-            // We use carWidth (600) + a little extra padding
-            let offScreenOffset: CGFloat = carWidth / 2 + 100
+            // Massive size: 800 width ensures they overlap the start/end points
+            let carWidth: CGFloat = 800
+            let carHeight: CGFloat = 450 // Massive height creates a wall of metal
+            let offScreenOffset: CGFloat = 500
             
             for i in 0..<2 {
                 let car = SKSpriteNode(imageNamed: "car_topview\(i+1)")
                 car.size = CGSize(width: carWidth, height: carHeight)
                 
                 let movingRight = (i == 0)
-                
-                // Calculate positions based on the screen edges + the car's width
                 let startX = movingRight ? frame.minX - offScreenOffset : frame.maxX + offScreenOffset
                 let endX = movingRight ? frame.maxX + offScreenOffset : frame.minX - offScreenOffset
                 
                 car.position = CGPoint(x: startX, y: lanes[i])
                 
+                // Rotation Fix: .pi is 180 degrees
                 if !movingRight {
-                    // .pi is 180 degrees (Facing Left)
                     car.zRotation = .pi * 2
-                    car.xScale = 1
                 } else {
                     car.zRotation = 0
-                    car.xScale = 1
                 }
                 
-                // Re-calculating physics to match the large 600x300 size
                 car.physicsBody = SKPhysicsBody(rectangleOf: car.size)
                 car.physicsBody?.isDynamic = false
                 car.physicsBody?.categoryBitMask = 2
                 addChild(car)
                 
-                // INCREASED SPEED: Lower duration = Faster car
-                // Previous was 1.8...2.8. Now it's much faster.
-                let duration = Double.random(in: 1.0...1.5)
+                // IMPOSSIBLE SPEED: 0.4 - 0.6 seconds to cross the entire screen.
+                // Human reaction time is usually 0.25s; this leaves zero room for error.
+                let duration = Double.random(in: 0.5...1.5)
                 
                 let move = SKAction.moveTo(x: endX, duration: duration)
                 let reset = SKAction.run { car.position.x = startX }

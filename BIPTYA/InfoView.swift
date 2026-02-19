@@ -34,18 +34,18 @@ struct InfoView: View {
                         // BIPTYA Text with clean white border (No glow)
                         ZStack {
                             Group {
-                                Text("BIPTYA")
+                                Text("BIBTYA")
                                     .offset(x:  1, y:  1)
-                                Text("BIPTYA")
+                                Text("BIBTYA")
                                     .offset(x: -1, y:  1)
-                                Text("BIPTYA")
+                                Text("BIBTYA")
                                     .offset(x:  1, y: -1)
-                                Text("BIPTYA")
+                                Text("BIBTYA")
                                     .offset(x: -1, y: -1)
                             }
                             .foregroundColor(.white)
                             
-                            Text("BIPTYA")
+                            Text("BIBTYA")
                                 .foregroundColor(biptyaColor)
                         }
                         .font(.custom("LostinSouth", size: 64))

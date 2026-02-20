@@ -1,5 +1,5 @@
 import SwiftUI
-import Charts // The framework for data visualization
+import Charts
 
 // MARK: - Data Models
 struct LeopardData: Identifiable {
@@ -15,11 +15,11 @@ struct CrossingData: Identifiable {
 }
 
 struct CoexistenceEndingView: View {
-    // --- State Management ---
     @State private var stage: Int = 0
-    // 0: Title, 1: Background/Quote, 2: Mortality Graph, 3: Crossing Graph, 4: Final Overlay
+    @State private var showLine1 = false
+    @State private var showLine2 = false
+    @State private var showLine3 = false
     
-    // --- Data Sets ---
     let mortalityData: [LeopardData] = [
         .init(year: 2012, deaths: 14), .init(year: 2013, deaths: 16),
         .init(year: 2014, deaths: 18), .init(year: 2015, deaths: 21),
@@ -37,33 +37,76 @@ struct CoexistenceEndingView: View {
 
     var body: some View {
         ZStack {
-            // Base layer: Black
             Color.black.ignoresSafeArea()
             
-            // --- STAGE 1+: Background Image ---
             if stage >= 1 {
-                Image("CoexistenceBackground") // Ensure this is in your Assets
+                Image("CoexistenceBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                    .overlay(Color.black.opacity(0.5)) // Darken to make text readable
+                    .overlay(Color.black.opacity(0.5))
                     .transition(.opacity)
                 
-                // Opening Quote
-                if stage == 1 {
-                    Text("“Progress is not just measured in kilometers of road,\nbut in lives safely preserved alongside it.”")
+                // --- STAGE 1 & 4 Overlay Text ---
+                VStack {
+                    if stage == 1 {
+                        Spacer() // Pushes text to the middle
+                        Text("“Progress is not just measured in kilometers of road,\nbut in lives safely preserved alongside it.”")
+                            .font(.system(size: 24, weight: .medium, design: .serif))
+                            .italic()
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                            .padding(40)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                        Spacer() // Keeps text in the middle
+                    }
+                    
+                    if stage == 4 {
+                        Spacer() // Centers the final group
+                        VStack(spacing: 25) {
+                            if showLine1 {
+                                Text("“When roads slow down, forests breathe.”")
+                                    .italic()
+                                // Same animation: Rise from bottom + Fade in
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
+                            }
+                            
+                            if showLine2 {
+                                Text("“Between 2016 and 2020, leopard deaths fell by over 75%.”")
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
+                            }
+                            
+                            if showLine3 {
+                                Text("“Coexistence is not an idea. It is infrastructure.”")
+                                    .fontWeight(.black)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
+                            }
+                        }
                         .font(.system(size: 24, weight: .medium, design: .serif))
-                        .italic()
-                        .multilineTextAlignment(.center)
                         .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
                         .padding(40)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        Spacer() // Keeps text centered
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             
-            // --- STAGE 2 & 3: Data Visualization ---
+            // --- DATA VISUALIZATION (Stage 2 & 3) ---
             VStack(spacing: 30) {
-                // Mortality Graph
+                // First Graph: Mortality
                 if stage == 2 {
                     VStack(alignment: .leading) {
                         Text("🐆 Leopard Mortality (Before vs After Mitigation)")
@@ -89,64 +132,57 @@ struct CoexistenceEndingView: View {
                                     .foregroundColor(.white)
                             }
                         }
-                        .frame(height: 250)
+                        .frame(height: 350)
                         .chartXScale(domain: 2011...2021)
                         
-                        Text("📍 NH7 – National Highway 44 Wildlife Corridor (Pench Landscape)")
+                        Text("📍 NH7 – National Highway 44 Wildlife Corridor")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white)
                     }
                     .padding()
-                    .background(Color.black.opacity(0.8).cornerRadius(15))
+                    .background(Color.black.opacity(0.4).cornerRadius(15))
                     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .opacity))
                 }
                 
-                // Crossing Data Graph
+                // Second Graph: Crossings (Now converted to Line Graph)
                 if stage == 3 {
                     VStack(alignment: .leading) {
-                        Text("Wildlife Crossings Per Month (Camera Trap Data)")
+                        Text("🐾 Wildlife Crossings Per Month (Line Trend)")
                             .font(.headline)
                             .foregroundColor(.white)
                         
                         Chart(crossingData) { item in
-                            BarMark(
+                            LineMark(
                                 x: .value("Year", String(item.year)),
                                 y: .value("Crossings", item.crossings)
                             )
+                            .interpolationMethod(.catmullRom)
                             .foregroundStyle(Color.green.gradient)
+                            .lineStyle(StrokeStyle(lineWidth: 3))
+
+                            PointMark(
+                                x: .value("Year", String(item.year)),
+                                y: .value("Crossings", item.crossings)
+                            )
+                            .annotation(position: .top) {
+                                Text("\(item.crossings)")
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                            }
                         }
-                        .frame(height: 250)
+                        .frame(height: 350)
                         
-                        Text("Average crossings trending upwards following bridge infrastructure.")
+                        Text("Average crossings trending upwards following infrastructure.")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white)
                     }
                     .padding()
-                    .background(Color.black.opacity(0.8).cornerRadius(15))
+                    .background(Color.black.opacity(0.4).cornerRadius(15))
                     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .opacity))
-                }
-                
-                // --- STAGE 4: Final Educational Overlay ---
-                if stage == 4 {
-                    VStack(spacing: 25) {
-                        Text("“When roads slow down, forests breathe.”")
-                            .italic()
-                        Text("“Between 2016 and 2020, leopard deaths fell by over 75%.”")
-                        Text("“Coexistence is not an idea. It is infrastructure.”")
-                            .fontWeight(.black)
-                    }
-                    .font(.system(size: 20, design: .serif))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color.black.opacity(0.85).cornerRadius(20))
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.orange.opacity(0.5), lineWidth: 1))
-                    .transition(.move(edge: .bottom))
                 }
             }
             .padding()
 
-            // --- STAGE 0: Initial Title Card ---
             if stage == 0 {
                 ZStack {
                     Color.black.ignoresSafeArea()
@@ -163,26 +199,35 @@ struct CoexistenceEndingView: View {
         }
     }
 
-    // Controls the timing of the cinematic sequence
     func runEndingSequence() {
-        // Show Title, then transition to Background/Quote
+        // Stage 0 -> 1 (Title to Background)
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
             withAnimation(.easeInOut(duration: 1.5)) { stage = 1 }
         }
         
-        // Show the Mortality Line Graph
+        // Stage 1 -> 2 (Mortality Graph)
         DispatchQueue.main.asyncAfter(deadline: .now() + 8.5) {
             withAnimation(.easeInOut) { stage = 2 }
         }
         
-        // Show the Crossing Bar Graph
+        // Stage 2 -> 3 (Crossing Graph)
         DispatchQueue.main.asyncAfter(deadline: .now() + 14.0) {
             withAnimation(.easeInOut) { stage = 3 }
         }
         
-        // Final Summary Text
+        // Stage 3 -> 4 (Final Sequence Starts)
         DispatchQueue.main.asyncAfter(deadline: .now() + 19.5) {
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.8)) { stage = 4 }
+            withAnimation(.easeInOut) { stage = 4 }
+            
+            withAnimation(.easeInOut(duration: 1.0).delay(0.5)) {
+                showLine1 = true
+            }
+            withAnimation(.easeInOut(duration: 1.0).delay(2.5)) {
+                showLine2 = true
+            }
+            withAnimation(.easeInOut(duration: 1.0).delay(4.5)) {
+                showLine3 = true
+            }
         }
     }
 }
